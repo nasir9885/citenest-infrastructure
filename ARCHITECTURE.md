@@ -375,3 +375,164 @@ AIDMS is independently managed from:
 /home/nasir/project/applications/citenest/core
 
 The system should now be treated as the stable baseline for future CiteNest development.
+
+## 15. Verified Database Architecture
+
+The following database mapping has been verified directly from the running Docker containers and application configuration.
+
+### 15.1 Site Database
+
+Application:
+
+/home/nasir/project/applications/citenest/site
+
+Database:
+
+citenest_site
+
+PostgreSQL container:
+
+citenest-db
+
+Persistent volume:
+
+citenest-site_citenest_site_db_data
+
+Application connection:
+
+DB_HOST=127.0.0.1
+DB_PORT=5433
+DB_NAME=citenest_site
+DB_USER=citenest_site
+
+
+### 15.2 EMS Database
+
+Application:
+
+/home/nasir/project/applications/citenest/ems
+
+Database:
+
+citenest_ems
+
+PostgreSQL container:
+
+citenest-db
+
+Persistent volume:
+
+citenest-site_citenest_site_db_data
+
+Application connection:
+
+DB_HOST=127.0.0.1
+DB_PORT=5433
+DB_NAME=citenest_ems
+DB_USER=citenest_site
+
+
+### 15.3 AIDMS Database
+
+Application:
+
+/home/nasir/project/applications/citenest/core
+
+Database:
+
+citenest_aidms
+
+PostgreSQL container:
+
+citenest-database-1
+
+Persistent volume:
+
+citenest_postgres_data
+
+Internal Docker database connection:
+
+database:5432
+
+Database user:
+
+citenest
+
+
+### 15.4 Authentik Database
+
+Service:
+
+/home/nasir/project/infrastructure/authentik
+
+Database:
+
+authentik
+
+PostgreSQL container:
+
+authentik-authentik-database-1
+
+Persistent volume:
+
+citenest_authentik_postgres_data
+
+Database user:
+
+authentik
+
+
+### 15.5 Non-Database Persistent Data
+
+AIDMS document repository:
+
+citenest_document_repository
+
+Container mount:
+
+/var/lib/citenest/documents
+
+Authentik application data:
+
+citenest_authentik_data
+
+Container mount:
+
+/data
+
+
+### 15.6 Database Architecture Summary
+
+citenest-db
+│
+├── citenest_site
+│   └── CiteNest Site
+│
+└── citenest_ems
+    └── Employee Management System
+
+
+citenest-database-1
+│
+└── citenest_aidms
+    └── AI Document Management System
+
+
+authentik-authentik-database-1
+│
+└── authentik
+    └── Authentik Identity Provider
+
+
+### 15.7 Backup Requirement
+
+Each application database must be backed up independently even when multiple databases share the same PostgreSQL container.
+
+The following databases therefore require separate logical backups:
+
+- citenest_site
+- citenest_ems
+- citenest_aidms
+- authentik
+
+Persistent non-database data must also be backed up separately.
