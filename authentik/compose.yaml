@@ -1,0 +1,73 @@
+services:
+  authentik-database:
+    image: postgres:16.14-bookworm
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${AUTHENTIK_POSTGRES_DB:-authentik}
+      POSTGRES_USER: ${AUTHENTIK_POSTGRES_USER:-authentik}
+      POSTGRES_PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD}
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    volumes:
+      - authentik_postgres_data:/var/lib/postgresql/data
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    command: server
+    restart: unless-stopped
+
+    environment: &authentik_environment
+      AUTHENTIK_POSTGRESQL__HOST: authentik-database
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRES_DB:-authentik}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRES_USER:-authentik}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+      AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+      AUTHENTIK_AVATARS: initials
+
+    depends_on:
+      authentik-database:
+        condition: service_healthy
+
+    ports:
+      - "0.0.0.0:9000:9000"
+
+    volumes:
+      - authentik_data:/data
+
+    shm_size: 512mb
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2026.5.6
+    command: worker
+    user: root
+    restart: unless-stopped
+
+    environment: *authentik_environment
+
+    depends_on:
+      authentik-database:
+        condition: service_healthy
+
+    volumes:
+      - authentik_data:/data
+
+    shm_size: 512mb
+
+volumes:
+  authentik_postgres_data:
+    external: true
+    name: citenest_authentik_postgres_data
+
+  authentik_data:
+    external: true
+    name: citenest_authentik_data

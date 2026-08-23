@@ -1,0 +1,21 @@
+services:
+  database:
+    image: postgres:16
+    container_name: citenest-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      - citenest_site_db_data:/var/lib/postgresql/data
+
+volumes:
+  citenest_site_db_data:
+    external: true
+    name: citenest-site_citenest_site_db_data
